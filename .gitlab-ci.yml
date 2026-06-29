@@ -1,0 +1,111 @@
+image: node:22-alpine
+
+stages:
+  - check
+  - build
+  - test
+  - deploy
+
+variables:
+  APP_VERSION: "$CI_COMMIT_SHORT_SHA"
+  RELEASE_CHANNEL: "unterricht"
+
+lint:
+  stage: check
+  script:
+    - npm run lint
+
+build:
+  stage: build
+  script:
+    - npm run build
+  artifacts:
+    name: "release-labor-build"
+    paths:
+      - dist/
+    expire_in: 1 week
+
+smoke_test:
+  stage: test
+  needs:
+    - job: build
+      artifacts: true
+  script:
+    - npm test
+
+deploy_staging:
+  stage: deploy
+  needs:
+    - job: build
+      artifacts: true
+  script:
+    - npm run deploy:staging
+  environment:
+    name: staging
+  artifacts:
+    name: "deployment-staging"
+    paths:
+      - deployments/
+    expire_in: 1 week
+  when: manual
+
+deploy_blue:
+  stage: deploy
+  needs:
+    - job: build
+      artifacts: true
+  script:
+    - npm run deploy:blue
+  environment:
+    name: production/blue
+  artifacts:
+    name: "deployment-blue"
+    paths:
+      - deployments/
+    expire_in: 1 week
+  when: manual
+
+deploy_green:
+  stage: deploy
+  needs:
+    - job: build
+      artifacts: true
+  script:
+    - npm run deploy:green
+  environment:
+    name: production/green
+  artifacts:
+    name: "deployment-green"
+    paths:
+      - deployments/
+    expire_in: 1 week
+  when: manual
+
+canary_10:
+  stage: deploy
+  needs:
+    - job: build
+      artifacts: true
+  script:
+    - npm run deploy:canary10
+  environment:
+    name: production/canary
+  artifacts:
+    name: "deployment-canary-10"
+    paths:
+      - deployments/
+    expire_in: 1 week
+  when: manual
+
+rollback_blue:
+  stage: deploy
+  script:
+    - npm run rollback:blue
+  environment:
+    name: production/rollback
+  artifacts:
+    name: "rollback-blue"
+    paths:
+      - deployments/
+    expire_in: 1 week
+  when: manual

@@ -1,0 +1,17 @@
+{
+  "name": "deployment-release-labor",
+  "version": "1.0.0",
+  "description": "Praxisprojekt für Deployment-Strategien im CI/CD-Unterricht",
+  "scripts": {
+    "lint": "node scripts/lint.js",
+    "build": "node scripts/build.js",
+    "test": "node scripts/smoke-test.js",
+    "deploy:staging": "node scripts/deploy.js staging",
+    "deploy:blue": "node scripts/deploy.js blue",
+    "deploy:green": "node scripts/deploy.js green",
+    "deploy:canary10": "node scripts/deploy.js canary 10",
+    "deploy:canary50": "node scripts/deploy.js canary 50",
+    "rollback:blue": "node scripts/rollback.js blue",
+    "rollback:green": "node scripts/rollback.js green"
+  }
+}

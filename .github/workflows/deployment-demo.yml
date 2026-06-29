@@ -1,0 +1,82 @@
+name: Deployment-Release-Labor
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      deployment_action:
+        description: "Welche Deployment-Simulation soll laufen?"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - blue
+          - green
+          - canary10
+          - rollback-blue
+
+jobs:
+  check_build_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Node.js vorbereiten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Lint ausführen
+        run: npm run lint
+
+      - name: Build erzeugen
+        run: npm run build
+
+      - name: Smoke-Test ausführen
+        run: npm test
+
+      - name: Build-Artefakt speichern
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-labor-build
+          path: dist/
+
+  deployment_simulation:
+    if: github.event_name == 'workflow_dispatch'
+    needs: check_build_test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Node.js vorbereiten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build erzeugen
+        run: npm run build
+
+      - name: Deployment simulieren
+        shell: bash
+        run: |
+          case "${{ github.event.inputs.deployment_action }}" in
+            staging) npm run deploy:staging ;;
+            blue) npm run deploy:blue ;;
+            green) npm run deploy:green ;;
+            canary10) npm run deploy:canary10 ;;
+            rollback-blue) npm run deploy:blue && npm run rollback:blue ;;
+          esac
+
+      - name: Deployment-Artefakt speichern
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-simulation
+          path: deployments/

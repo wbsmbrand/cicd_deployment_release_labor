@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Deployment Release-Labor</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main class="app">
+      <section class="hero">
+        <p class="eyebrow">CI/CD Deployment-Automatisierung</p>
+        <h1>Release-Labor</h1>
+        <p>
+          Diese Seite wurde automatisch gebaut. Die Pipeline kann daraus
+          Staging-, Blue-Green-, Canary- und Rollback-Artefakte erzeugen.
+        </p>
+      </section>
+
+      <section class="release-grid" aria-label="Release-Informationen">
+        <article>
+          <span>Version</span>
+          <strong>__APP_VERSION__</strong>
+        </article>
+        <article>
+          <span>Kanal</span>
+          <strong>__RELEASE_CHANNEL__</strong>
+        </article>
+        <article>
+          <span>Build-Zeit</span>
+          <strong>__BUILD_TIME__</strong>
+        </article>
+      </section>
+
+      <section class="strategies">
+        <h2>Strategien</h2>
+        <ul>
+          <li><strong>Staging:</strong> erst testen, noch keine Produktion.</li>
+          <li><strong>Blue-Green:</strong> zwei Umgebungen, gezieltes Umschalten.</li>
+          <li><strong>Canary:</strong> neue Version erst für wenige Nutzende.</li>
+          <li><strong>Rollback:</strong> zurück auf eine bekannte gute Version.</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
