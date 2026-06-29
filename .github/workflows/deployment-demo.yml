@@ -1,82 +1,150 @@
+# Name des GitHub-Actions-Workflows, wie er in der Oberfläche angezeigt wird.
 name: Deployment-Release-Labor
 
+# Ereignisse, die diesen Workflow starten können.
 on:
+  # Startet den Workflow automatisch bei einem Push.
   push:
+    # Beschränkt den Push-Trigger auf bestimmte Branches.
     branches:
+      # Der Workflow läuft bei Pushes auf den Branch main.
       - main
+  # Startet den Workflow automatisch bei Pull Requests.
   pull_request:
+  # Ermöglicht das manuelle Starten des Workflows über die GitHub-Oberfläche.
   workflow_dispatch:
+    # Definiert Eingabefelder für den manuellen Workflow-Start.
     inputs:
+      # Eingabeparameter für die gewünschte Deployment-Simulation.
       deployment_action:
+        # Beschreibung, die beim manuellen Start angezeigt wird.
         description: "Welche Deployment-Simulation soll laufen?"
+        # Macht die Auswahl dieses Parameters verpflichtend.
         required: true
+        # Vorausgewählter Standardwert für den manuellen Start.
         default: "staging"
+        # Legt fest, dass nur Werte aus einer Auswahlliste erlaubt sind.
         type: choice
+        # Liste der erlaubten Deployment-Aktionen.
         options:
+          # Simuliert ein Deployment in die Staging-Umgebung.
           - staging
+          # Simuliert ein Deployment in die blaue Umgebung.
           - blue
+          # Simuliert ein Deployment in die grüne Umgebung.
           - green
+          # Simuliert ein Canary-Deployment mit 10 Prozent Traffic.
           - canary10
+          # Simuliert ein Rollback der blauen Umgebung.
           - rollback-blue
 
+# Enthält alle Jobs, die der Workflow ausführt.
 jobs:
+  # Job für Prüfung, Build und Tests.
   check_build_test:
+    # Führt den Job auf einem aktuellen Ubuntu-Runner aus.
     runs-on: ubuntu-latest
 
+    # Liste der einzelnen Schritte dieses Jobs.
     steps:
+      # Schritt zum Herunterladen des Repository-Inhalts.
       - name: Repository auschecken
+        # Verwendet die offizielle Checkout-Action.
         uses: actions/checkout@v4
 
+      # Schritt zum Einrichten der Node.js-Laufzeit.
       - name: Node.js vorbereiten
+        # Verwendet die offizielle Setup-Node-Action.
         uses: actions/setup-node@v4
+        # Übergibt Konfiguration an die Setup-Node-Action.
         with:
+          # Installiert und verwendet Node.js Version 22.
           node-version: "22"
 
+      # Schritt zur statischen Codeprüfung.
       - name: Lint ausführen
+        # Führt das im Projekt definierte Lint-Skript aus.
         run: npm run lint
 
+      # Schritt zum Erzeugen des Build-Ergebnisses.
       - name: Build erzeugen
+        # Führt das im Projekt definierte Build-Skript aus.
         run: npm run build
 
+      # Schritt zum Ausführen der Smoke-Tests.
       - name: Smoke-Test ausführen
+        # Führt die im Projekt definierten Tests aus.
         run: npm test
 
+      # Schritt zum Speichern des Build-Ergebnisses als Artefakt.
       - name: Build-Artefakt speichern
+        # Verwendet die offizielle Action zum Hochladen von Artefakten.
         uses: actions/upload-artifact@v4
+        # Übergibt Name und Pfad des Artefakts.
         with:
+          # Name des gespeicherten Build-Artefakts.
           name: release-labor-build
+          # Pfad zum Build-Ausgabeverzeichnis.
           path: dist/
 
+  # Job für die manuell ausgelöste Deployment-Simulation.
   deployment_simulation:
+    # Führt diesen Job nur aus, wenn der Workflow manuell gestartet wurde.
     if: github.event_name == 'workflow_dispatch'
+    # Wartet, bis der Prüf-, Build- und Test-Job erfolgreich abgeschlossen ist.
     needs: check_build_test
+    # Führt den Job auf einem aktuellen Ubuntu-Runner aus.
     runs-on: ubuntu-latest
 
+    # Liste der einzelnen Schritte dieses Jobs.
     steps:
+      # Schritt zum Herunterladen des Repository-Inhalts.
       - name: Repository auschecken
+        # Verwendet die offizielle Checkout-Action.
         uses: actions/checkout@v4
 
+      # Schritt zum Einrichten der Node.js-Laufzeit.
       - name: Node.js vorbereiten
+        # Verwendet die offizielle Setup-Node-Action.
         uses: actions/setup-node@v4
+        # Übergibt Konfiguration an die Setup-Node-Action.
         with:
+          # Installiert und verwendet Node.js Version 22.
           node-version: "22"
 
+      # Schritt zum Erzeugen des Builds vor der Deployment-Simulation.
       - name: Build erzeugen
+        # Führt das im Projekt definierte Build-Skript aus.
         run: npm run build
 
+      # Schritt zur Auswahl und Ausführung der gewünschten Deployment-Simulation.
       - name: Deployment simulieren
+        # Führt den folgenden Mehrzeilenbefehl mit Bash aus.
         shell: bash
+        # Startet einen mehrzeiligen Bash-Befehl.
         run: |
+          # Prüft den manuell ausgewählten Eingabewert.
           case "${{ github.event.inputs.deployment_action }}" in
+            # Führt das Staging-Deployment-Skript aus.
             staging) npm run deploy:staging ;;
+            # Führt das Blue-Deployment-Skript aus.
             blue) npm run deploy:blue ;;
+            # Führt das Green-Deployment-Skript aus.
             green) npm run deploy:green ;;
+            # Führt das Canary-Deployment-Skript mit 10 Prozent Traffic aus.
             canary10) npm run deploy:canary10 ;;
+            # Führt zuerst ein Blue-Deployment und danach den Blue-Rollback aus.
             rollback-blue) npm run deploy:blue && npm run rollback:blue ;;
+          # Beendet die Fallunterscheidung.
           esac
 
+      # Schritt zum Speichern der erzeugten Deployment-Simulation als Artefakt.
       - name: Deployment-Artefakt speichern
+        # Verwendet die offizielle Action zum Hochladen von Artefakten.
         uses: actions/upload-artifact@v4
+        # Übergibt Name und Pfad des Artefakts.
         with:
+          # Name des gespeicherten Deployment-Artefakts.
           name: deployment-simulation
+          # Pfad zum Verzeichnis mit den simulierten Deployment-Dateien.
           path: deployments/
